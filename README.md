@@ -151,25 +151,35 @@ celeste@Celestes-MacBook-Pro processout-payment-gateway % curl -X GET http://loc
 ```
 
 ## How does the application work?
-The application has two handlers, one for processing payments and one for fetching individual payments.
+The application has two endpoints, with a handler for each:
+1. A request to `POST /process-payment` calls `ProcessPaymentHandler`, for processing a new payment.
+1. A request to `GET /process-payment/{id}` calls `GetPaymentHandler`, for fetching individual payments by payment ID.
 
 ### How processing payments works
 `ProcessPaymentHandler` is the handler for processing payments. It works by:
 1. Decoding the request into a new `ProcessPaymentRequest`, or returns a http 400 response if an error is encountered along with an error message in the body.
-1. Once successfully decoded, `ProcessPaymentRequest` is validated - each field undergoes specific validation which is covered in the API documentation. A http 400 response is returned if a validation error is encountered along with an error message in the body.
-1. If validation succeeds, the "Aquiring Bank" is called. This is currently mocked with `MockCallBank`. The assumed response body is structured like:
+1. Once successfully decoded, `ProcessPaymentRequest` is validated - each field undergoes specific validation. Details on this is covered in the API documentation. If a validation error is encountered, http 400 response is returned with the validation error in the response body.
+1. If validation succeeds, the "Aquiring Bank" is called to request a new payment is made with the request data provided. This is currently mocked with `MockCallBank`. The assumed response body is structured like:
     ```json
     {
         "payment_id": "c08a3e62-ab97-43fc-a633-5b49f929e235", 
         "status": "SUCCESS"
     }
     ```
-    `MockCallBank` also handles decoding this response into `CallBankResponse`. A http 500 response is returned if an error is encountered along with an error message in the body.
-1. Once the bank response has been successfully decoded, a new `MaskedPayment` is created with data from the original http request, and data from the bank response. This data is stored locally in memory, and also logged in the server terminal.
-1. Finally the `MaskedPayment` is written to the response body with a http status code of 200.
+    `MockCallBank` also handles decoding this response into `CallBankResponse`. If an error is encountered when making a call to the Bank, a http 500 response is returned with an error message in the reponse body.
+1. If the previous step succeeds and the bank response has been successfully decoded, a new `MaskedPayment` is created and populated with data from the original http request, and the bank response (the payment ID and status).
+1. This data is stored locally in memory (via `PaymentStore.AddPayment`), and also logged in the server (which you can see in the terminal window that runs the server). `MaskedPayment` contains a the masked card number and does not contain the CVV number. 
+1. Finally the `MaskedPayment` is written to the response body with a http status code of 200. This is to confirm the payment has been handled successfully while providing data that could be useful for merchant accounting purposes. Reaching this point does not necessarily mean that the payment was successful on the bank's side as the payment status can either be `"SUCCESS"` OR `"FAILED"`.
 
 ### How payment retrieval works
-<!-- TODO -->
+`GetPaymentHandler` is the handler for fetching individual payments by payment ID. It works by:
+1. Accessing the payment ID which is in the path of the endpoint call.
+1. Fetching the payment from the payment store via `PaymentStore.GetPayment`, and if not found then returns a http 400 response with an error message expressing that the payment is not found. Similar to `PaymentStore.AddPayment`, the operation for obtaining the data in the map is surrounded by a mutex lock and unlock.
+1. If payment in form `MaskedPayment` is found, it is then written to the response and the http response code is 200.
+
+### Design choices
+- `MaskedPayment` as a data structure: Payment data generally is very sensitive and the payment data that is stored in this application is masked to reduce the risk in the event of a data breach, such as masking the card number and omitting CVV.
+- The in-memory payment data store, `PaymentStore.AddPayment`: The in-memory payment store, `PaymentStore`, holds a map containing masked payment data, and a mutex. Any moment the entire set of payment data is changed, the mutex is locked, the operation is performed, and then the mutex is unlocked. This is to prevent race conditions where a payment has not yet completed processing and an attempted fetch is performed concurrently (although in this current design, the payment ID is only returned upon process completion so this situation would not be possible in reality). This approach would be especially handy if the application became more complex and support for amending individual payments was added, as it would prevent fetching stale payment data.
 
 ## Testing:
 Run all tests with `go test ./...`. This runs all test files (ending with `_test.go`).
