@@ -19,11 +19,11 @@ func TestProcessPaymentHandler(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
-		name                 string
-		modifyRequest        func(req *models.ProcessPaymentRequest)
-		expectedStatusCode   int
-		expectedPayment      models.Payment
-		expectedErrorMessage string
+		name                  string
+		modifyRequest         func(req *models.ProcessPaymentRequest)
+		expectedStatusCode    int
+		expectedMaskedPayment models.MaskedPayment
+		expectedErrorMessage  string
 	}
 
 	testCases := []testCase{
@@ -31,13 +31,12 @@ func TestProcessPaymentHandler(t *testing.T) {
 			"valid payload returns payment response",
 			func(req *models.ProcessPaymentRequest) {},
 			http.StatusOK,
-			models.Payment{
-				CardNumber:  "1234123412341234",
-				ExpiryYear:  2099,
-				ExpiryMonth: 12,
-				CVV:         "987",
-				Amount:      10.05,
-				Currency:    "GBP",
+			models.MaskedPayment{
+				MaskedCardNumber: "************1234",
+				ExpiryYear:       2099,
+				ExpiryMonth:      12,
+				Amount:           10.05,
+				Currency:         "GBP",
 			},
 			"",
 		}, {
@@ -46,7 +45,7 @@ func TestProcessPaymentHandler(t *testing.T) {
 				req.CardNumber = ""
 			},
 			http.StatusBadRequest,
-			models.Payment{},
+			models.MaskedPayment{},
 			"card number should have 16 digits",
 		},
 	}
@@ -71,27 +70,26 @@ func TestProcessPaymentHandler(t *testing.T) {
 			r.Equal(tc.expectedStatusCode, response.Result().StatusCode)
 
 			if tc.expectedErrorMessage == "" {
-				// Positive scenarios: response should contain payment data
-				var payment models.Payment
-				err = json.NewDecoder(response.Body).Decode(&payment)
+				// Positive scenarios: response should contain maskedPayment data
+				var maskedPayment models.MaskedPayment
+				err = json.NewDecoder(response.Body).Decode(&maskedPayment)
 				r.NoError(err, "failed to unmarshal response")
 
-				expectedPayment := models.Payment{
-					CardNumber:  tc.expectedPayment.CardNumber,
-					ExpiryYear:  tc.expectedPayment.ExpiryYear,
-					ExpiryMonth: tc.expectedPayment.ExpiryMonth,
-					CVV:         tc.expectedPayment.CVV,
-					Amount:      tc.expectedPayment.Amount,
-					Currency:    tc.expectedPayment.Currency,
+				expected := models.MaskedPayment{
+					MaskedCardNumber: tc.expectedMaskedPayment.MaskedCardNumber,
+					ExpiryYear:       tc.expectedMaskedPayment.ExpiryYear,
+					ExpiryMonth:      tc.expectedMaskedPayment.ExpiryMonth,
+					Amount:           tc.expectedMaskedPayment.Amount,
+					Currency:         tc.expectedMaskedPayment.Currency,
 				}
 
-				if diff := cmp.Diff(expectedPayment, payment, cmpopts.IgnoreFields(models.Payment{}, "ID", "Status")); diff != "" {
+				if diff := cmp.Diff(expected, maskedPayment, cmpopts.IgnoreFields(models.MaskedPayment{}, "ID", "Status")); diff != "" {
 					t.Errorf("Payment mismatch (-expected +got):\n%s", diff)
 				}
-				r.NotEmpty(payment.ID)
+				r.NotEmpty(maskedPayment.ID)
 				r.True(
-					payment.Status == "SUCCESS" || payment.Status == "FAILED",
-					`expected status to be either "SUCCESS" or "FAILED", got "%s"`, payment.Status,
+					maskedPayment.Status == "SUCCESS" || maskedPayment.Status == "FAILED",
+					`expected status to be either "SUCCESS" or "FAILED", got "%s"`, maskedPayment.Status,
 				)
 
 			} else {
@@ -294,6 +292,29 @@ func TestPopulatePayment(t *testing.T) {
 	a.Equal(request.CVV, payment.CVV)
 	a.Equal(request.Amount, payment.Amount)
 	a.Equal(request.Currency, payment.Currency)
+}
+
+func TestMaskCardNumber(t *testing.T) {
+	r := require.New(t)
+	masked := maskCardNumber("1234123412341234")
+	r.Equal("************1234", masked)
+}
+
+func TestPopulateMaskedPayment(t *testing.T) {
+	a := assert.New(t)
+
+	request := validProcessPaymentRequest()
+	id := "some-id"
+	status := "some-status"
+
+	maskedPayment := populateMaskedPayment(*request, id, status)
+	a.Equal(id, maskedPayment.ID)
+	a.Equal(status, maskedPayment.Status)
+	a.Equal("************1234", maskedPayment.MaskedCardNumber)
+	a.Equal(request.ExpiryYear, maskedPayment.ExpiryYear)
+	a.Equal(request.ExpiryMonth, maskedPayment.ExpiryMonth)
+	a.Equal(request.Amount, maskedPayment.Amount)
+	a.Equal(request.Currency, maskedPayment.Currency)
 }
 
 func validProcessPaymentRequest() *models.ProcessPaymentRequest {

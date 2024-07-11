@@ -11,6 +11,16 @@ type Payment struct {
 	Currency    string  `json:"currency"`
 }
 
+type MaskedPayment struct {
+	ID               string  `json:"id"`
+	Status           string  `json:"status"`
+	MaskedCardNumber string  `json:"masked_card_number"`
+	ExpiryYear       uint    `json:"expiry_year"`
+	ExpiryMonth      uint    `json:"expiry_month"`
+	Amount           float64 `json:"amount"`
+	Currency         string  `json:"currency"`
+}
+
 type BankResponse struct {
 	ID     string `json:"id"`
 	Status string `json:"status"`

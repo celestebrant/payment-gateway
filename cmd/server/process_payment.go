@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -31,9 +32,12 @@ func ProcessPaymentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Add payment to store
-	payment := populatePayment(*request, bankResponse.PaymentID, bankResponse.Status)
+	// payment := populatePayment(*request, bankResponse.PaymentID, bankResponse.Status)
 
-	json.NewEncoder(w).Encode(payment)
+	maskedPayment := populateMaskedPayment(*request, bankResponse.PaymentID, bankResponse.Status)
+	log.Println(*maskedPayment)
+
+	json.NewEncoder(w).Encode(maskedPayment)
 }
 
 /*
@@ -89,7 +93,7 @@ func validateProcessPaymentRequest(request models.ProcessPaymentRequest) error {
 	return nil
 }
 
-// populatePayment a Payment with values from the provided request, id and status.
+// populatePayment returns a Payment with values from the provided request, id and status.
 func populatePayment(request models.ProcessPaymentRequest, id, status string) *models.Payment {
 	return &models.Payment{
 		ID:          id,
@@ -101,4 +105,22 @@ func populatePayment(request models.ProcessPaymentRequest, id, status string) *m
 		Amount:      request.Amount,
 		Currency:    request.Currency,
 	}
+}
+
+// populateMaskedPayment returns a MaskedPayment with values from the provided request, id and status.
+func populateMaskedPayment(request models.ProcessPaymentRequest, id, status string) *models.MaskedPayment {
+	return &models.MaskedPayment{
+		ID:               id,
+		Status:           status,
+		MaskedCardNumber: maskCardNumber(request.CardNumber),
+		ExpiryYear:       request.ExpiryYear,
+		ExpiryMonth:      request.ExpiryMonth,
+		Amount:           request.Amount,
+		Currency:         request.Currency,
+	}
+}
+
+// maskCardNumber returns the card number with * for all digits but the final 4, like ************XXXX.
+func maskCardNumber(cardNumber string) string {
+	return "************" + cardNumber[len(cardNumber)-4:]
 }
