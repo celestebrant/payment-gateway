@@ -25,8 +25,9 @@ type ProcessPaymentRequest struct {
 	Currency    string  `json:"currency"`
 }
 
-func NewProcessPaymentRequest() ProcessPaymentRequest {
-	return ProcessPaymentRequest{
+// NewProcessPaymentRequest creates a new ProcessPaymentRequest with zero values.
+func NewProcessPaymentRequest() *ProcessPaymentRequest {
+	return &ProcessPaymentRequest{
 		CardNumber:  "",
 		ExpiryYear:  0,
 		ExpiryMonth: 0,
@@ -39,4 +40,12 @@ func NewProcessPaymentRequest() ProcessPaymentRequest {
 type CallBankResponse struct {
 	PaymentID string `json:"payment_id"`
 	Status    string `json:"status"`
+}
+
+// NewCallBankResponse creates a new CallBankResponse with zero values.
+func NewCallBankResponse() *CallBankResponse {
+	return &CallBankResponse{
+		PaymentID: "",
+		Status:    "",
+	}
 }

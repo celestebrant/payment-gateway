@@ -4,20 +4,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sync"
 
-	"github.com/celestebrant/processout-payment-gateway/models"
 	"github.com/gorilla/mux"
 )
 
 const (
 	port = "8000"
 )
-
-var GlobPayments struct {
-	mu       sync.Mutex
-	Payments map[string]*models.Payment
-}
 
 // Subset of ISO 4217 currency codes
 var supportedCurrencies = map[string]bool{
