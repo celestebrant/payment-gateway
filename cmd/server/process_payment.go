@@ -32,9 +32,8 @@ func ProcessPaymentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Add payment to store
-	// payment := populatePayment(*request, bankResponse.PaymentID, bankResponse.Status)
-
 	maskedPayment := populateMaskedPayment(*request, bankResponse.PaymentID, bankResponse.Status)
+	paymentStore.AddPayment(maskedPayment)
 	log.Println(*maskedPayment)
 
 	json.NewEncoder(w).Encode(maskedPayment)
