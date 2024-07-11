@@ -27,7 +27,7 @@ func ProcessPaymentHandler(w http.ResponseWriter, r *http.Request) {
 
 	bankResponse, err := bank.MockCallBank()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "unexpected error with bank", http.StatusInternalServerError)
 		return
 	}
 

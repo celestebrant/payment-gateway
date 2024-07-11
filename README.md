@@ -1,26 +1,179 @@
-# Building a Payment Gateway
+# Payment Gateway
 
-Steps:
-1. Generate a `PaymentRequest`
-1. Validate `PaymentRequest`
+## API Documentation
+The Payment Gateway API allows merchants to process new payments and retrieve details of previously made payments. This section provides an overview of the endpoints, request and response formats, and working examples.
 
-Run server:
-`go run ./cmd/server`
+### Base URL
+```
+http://localhost:8000
+```
 
-Testing:
-`go test ./...`
+### Endpoints
 
-- endpoint happy
-- endpoint any error
-- concurrency?
-- mocked happy
-- validation:
-    - valid card number
-    - contains alphabet
-    - too short
-    - too long
-    - expiry year = 999
+There are 2 endpoints:
+1. Process payment
+2. Get payment
 
+#### Process payment
+
+- `POST /process-payment`
+- Processes a new payment through the payment gateway.
+- Headers: `Content-Type: application/json`
+- Example request body
+  ```json
+  {
+    "card_number": "1234123412341234",
+    "expiry_year": 2028,
+    "expiry_month": 12,
+    "cvv": "123",
+    "amount": 12.05,
+    "currency": "GBP"
+  }
+  ```
+
+*Definitions:*
+- `card_number` - (mandatory) String with exactly 16 digits of numbers only.
+- `expiry_year` - (mandatory) Integer value that is 4 digits long and greater than 0.
+- `expiry_month` - (mandatory) Integer with value of 1 to 12, inclusive.
+- `cvv` - (mandatory) String with exactly 3 digits of numbers only.
+- `amount` - (mandatory) Floating-point number with a positive value and up to 2 decimal places.
+- `currency` - (mandatory) String (3 characters long) with value `"GBP"` or `"EUR"`.
+
+**Response**
+
+Status Code
+- `200 OK`, success
+- `400 Bad Request`, validation error
+- `500 Internal Server Error`, server error
+
+Example body
+  ```json
+  {
+    "id": "c08a3e62-ab97-43fc-a633-5b49f929e235",
+    "status": "SUCCESS",
+    "masked_card_number": "************1234",
+    "expiry_year": 2028,
+    "expiry_month": 12,
+    "amount": 12.05,
+    "currency": "GBP"
+  }
+  ```
+
+*Definitions:*
+- `id` - A generated ID for the payment set by the bank.
+- `status` - Denotes the success of the payment. Has value `"SUCCESS"` or `"FAILED`.
+- `masked_card_number` - The card number as requested, with the first 12 digits masked with `*`.
+- `expiry_year` - The expiry year of the card as requested.
+- `expiry_month` - The expiry month of the card as requested.
+- `cvv` - (mandatory) Must be 3 digits long of numbers only.
+- `amount` - (mandatory) Must be a positive number with up to 2 decimal places.
+- `currency` - (mandatory) Must be either `"GBP"` or `"EUR"`.
+
+**Example cURL request**
+
+```sh
+curl -X POST http://localhost:8000/payments \
+    -H "Content-Type: application/json" \
+    -d '{"card_number":"1234123412341234", "expiry_year":2028, "expiry_month":12, "cvv":"123", "amount":12.05, "currency":"GBP"}'
+```
+
+#### Get payment
+
+- `GET /process-payment/{id}`
+- Retrieves details of a previously made payment using its ID.
+- Headers: `Content-Type: application/json`
+- Path parameters
+    - `id` - the ID of the payment to retrieve.
+
+**Response**
+
+Status Code
+- `200 OK`, success
+- `404 Not Found`, validation error
+
+Example body
+  ```json
+  {
+    "id": "c08a3e62-ab97-43fc-a633-5b49f929e235",
+    "status": "SUCCESS",
+    "masked_card_number": "************1234",
+    "expiry_year": 2028,
+    "expiry_month": 12,
+    "amount": 12.05,
+    "currency": "GBP"
+  }
+  ```
+
+*Definitions:*
+- `id` - A generated ID for the payment set by the bank.
+- `status` - Denotes the success of the payment. Has value `"SUCCESS"` or `"FAILED`.
+- `masked_card_number` - The card number as requested, with the first 12 digits masked with `*`.
+- `expiry_year` - The expiry year of the card as requested.
+- `expiry_month` - The expiry month of the card as requested.
+- `cvv` - (mandatory) Must be 3 digits long of numbers only.
+- `amount` - (mandatory) Must be a positive number with up to 2 decimal places.
+- `currency` - (mandatory) Must be either `"GBP"` or `"EUR"`.
+
+**Example cURL request**
+
+```sh
+curl -X GET http://localhost:8000/payments/c08a3e62-ab97-43fc-a633-5b49f929e235 \
+    -H "Content-Type: application/json"
+```
+
+## How to run the server
+Run the server locally with `go run ./cmd/server`. You should see the output "hang" like this
+```
+$ go run ./cmd/server
+2024/07/11 22:03:55 server listening on port 8000...
+```
+
+This runs the server locally on port `8000`. You are now able to make requests.
+
+## How to interact with the server
+You can call the server by opening a separate terminal window and running a CURL command. The response will be printed:
+```
+$ curl -X POST http://localhost:8000/payments -H "Content-Type: application/json" -d '{"card_number":"1234567812345678", "expiry_year":2028, "expiry_month":12, "cvv":"987", "amount":12.05, "currency":"GBP"}'
+{"id":"9fdbd34c-3082-4ce7-9718-369f541fa317","status":"FAILED","masked_card_number":"************5678","expiry_year":2028,"expiry_month":12,"amount":12.05,"currency":"GBP"}
+```
+
+If you look at the terminal window running the server, you will see a logged output:
+```
+celeste@Celestes-MacBook-Pro processout-payment-gateway % go run ./cmd/server
+2024/07/11 22:03:55 server listening on port 8000...
+2024/07/11 22:04:40 {9fdbd34c-3082-4ce7-9718-369f541fa317 FAILED ************5678 2028 12 12.05 GBP}
+```
+
+You can now fetch the existing payment by ID:
+```
+celeste@Celestes-MacBook-Pro processout-payment-gateway % curl -X GET http://localhost:8000/payments/9fdbd34c-3082-4ce7-9718-369f541fa317 -H "Content-Type: application/json"
+{"id":"9fdbd34c-3082-4ce7-9718-369f541fa317","status":"FAILED","masked_card_number":"************5678","expiry_year":2028,"expiry_month":12,"amount":12.05,"currency":"GBP"}
+```
+
+## How does the application work?
+The application has two handlers, one for processing payments and one for fetching individual payments.
+
+### How processing payments works
+`ProcessPaymentHandler` is the handler for processing payments. It works by:
+1. Decoding the request into a new `ProcessPaymentRequest`, or returns a http 400 response if an error is encountered along with an error message in the body.
+1. Once successfully decoded, `ProcessPaymentRequest` is validated - each field undergoes specific validation which is covered in the API documentation. A http 400 response is returned if a validation error is encountered along with an error message in the body.
+1. If validation succeeds, the "Aquiring Bank" is called. This is currently mocked with `MockCallBank`. The assumed response body is structured like:
+    ```json
+    {
+        "payment_id": "c08a3e62-ab97-43fc-a633-5b49f929e235", 
+        "status": "SUCCESS"
+    }
+    ```
+    `MockCallBank` also handles decoding this response into `CallBankResponse`. A http 500 response is returned if an error is encountered along with an error message in the body.
+1. Once the bank response has been successfully decoded, a new `MaskedPayment` is created with data from the original http request, and data from the bank response. This data is stored locally in memory, and also logged in the server terminal.
+1. Finally the `MaskedPayment` is written to the response body with a http status code of 200.
+
+### How payment retrieval works
+<!-- TODO -->
+
+## Testing:
+Run all tests with `go test ./...`. This runs all test files (ending with `_test.go`).
+There are 2 levels of testing currently: unit and integration tests.
 
 ## Assumptions
 - For simplicity, typical British Visa and Mastercard payment card characteristics are the only accepted payment method for my solution. The characteristics are:
@@ -34,7 +187,13 @@ Testing:
 - Persistent storage for payments e.g. relational (SQL) database, and cache utilisation for frequently fetched payment IDs or other frequently fetched data.
 - Supported currencies not hard-coded but either set via a config map, or alternatively, a separate store plus caching.
 - Stronger security for stored payment data, e.g. encryption.
+- Concurrency tests to ensure race conditions are prevented, and suitable usage of mutex locks is in order.
 - Deployment in a containerised manner (e.g. Docker) and containter orchestration (e.g. Kubernetes) to handle high load.
 - Deployment on a cloud instance for reduced overhead on hardware maintenance, although requiring platform engineering experience.
 - Observability, performance monitoring and logging. Useful for understanding load requirements when performance analysis is done for production deployments - might find answers to questions like "High read? Or high writing? Or both?", "Why do my deployments fail sometimes?", etc.
 - Load testing: stress tests, peak load, soak testing for perfomance degradation and race condition identification.
+
+## Cloud technologies
+It could be possible to run the computation proceses using AWS Elastic Load Balancing as this would automatically distribute traffic across EC2 instances, and may be suitable for generally high and variable load. Alternatively AWS Lambda could be an option, although would not suitable for containerised deployment. The payment details could be stored using AWS RDS with an SQL database like MySQL or PostgreSQL. The API could be explosed with AWS API Gateway and AWS CloudWatch and Performance Insights could be used for monitoring and logging including monitoring database usage.
+
+For old payment data, it might become unnecessary and expensive to retain so an archival strategy for old (and very infrequently fetched) data could be useful for reducing the cloud bill.
