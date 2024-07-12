@@ -44,7 +44,11 @@ func ProcessPaymentHandler(w http.ResponseWriter, r *http.Request) {
 	bankRequest := callBankRequest(request)
 	bankResponse, err := mockbank.CallBank(bankRequest)
 	if err != nil {
-		http.Error(w, "unexpected error with bank", http.StatusInternalServerError)
+		http.Error(w, "unexpected error from call to the bank", http.StatusInternalServerError)
+		return
+	}
+	if bankResponse == nil {
+		http.Error(w, "failed to receive a response from the bank", http.StatusInternalServerError)
 		return
 	}
 
