@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/celestebrant/processout-payment-gateway/bank"
+	"github.com/celestebrant/processout-payment-gateway/mockbank"
 	"github.com/celestebrant/processout-payment-gateway/models"
 )
 
@@ -40,18 +40,31 @@ func ProcessPaymentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bankResponse, err := bank.MockCallBank()
+	// Generate a mock bank call request, and receive a mocked response with useful data
+	bankRequest := callBankRequest(request)
+	bankResponse, err := mockbank.CallBank(bankRequest)
 	if err != nil {
 		http.Error(w, "unexpected error with bank", http.StatusInternalServerError)
 		return
 	}
 
-	// TODO: Add payment to store
 	maskedPayment := populateMaskedPayment(request, bankResponse.PaymentID, bankResponse.Status)
 	paymentStore.AddPayment(maskedPayment)
 	log.Println("Processed payment:", *maskedPayment)
 
 	json.NewEncoder(w).Encode(maskedPayment)
+}
+
+// callBankRequest generates a mockbank.CallBankRequest by populating with values from p.
+func callBankRequest(p models.ProcessPaymentRequest) mockbank.CallBankRequest {
+	return mockbank.CallBankRequest{
+		CardNumber:  p.CardNumber,
+		ExpiryYear:  p.ExpiryYear,
+		ExpiryMonth: p.ExpiryMonth,
+		CVV:         p.CVV,
+		Amount:      p.Amount,
+		Currency:    p.Currency,
+	}
 }
 
 /*

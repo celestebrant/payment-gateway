@@ -1,4 +1,4 @@
-package bank
+package mockbank
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ func TestMockData(t *testing.T) {
 	r, a := require.New(t), assert.New(t)
 
 	// Verify mock data generation
-	mockDataMap := generateMockData()
+	mockDataMap := generateMockedData()
 	a.NotEmpty(mockDataMap["payment_id"])
 	r.True(
 		mockDataMap["status"] == "SUCCESS" || mockDataMap["status"] == "FAILED",
@@ -28,9 +28,10 @@ func TestMockData(t *testing.T) {
 	r.Equal(mockDataMap["status"], callBankResponse.Status, "payment ID value should be propagated")
 }
 
-func TestMockCallBank(t *testing.T) {
+func TestCallBank(t *testing.T) {
 	r, a := require.New(t), assert.New(t)
-	callBankResponse, err := MockCallBank()
+	callBankRequest := CallBankRequest{}
+	callBankResponse, err := CallBank(callBankRequest)
 	r.NoError(err)
 	a.NotEmpty(callBankResponse.PaymentID)
 	a.NotEmpty(callBankResponse.Status)

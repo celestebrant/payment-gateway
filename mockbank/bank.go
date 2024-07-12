@@ -1,4 +1,4 @@
-package bank
+package mockbank
 
 import (
 	"bytes"
@@ -7,14 +7,34 @@ import (
 
 	"golang.org/x/exp/rand"
 
-	"github.com/celestebrant/processout-payment-gateway/models"
 	"github.com/google/uuid"
 )
 
-// MockCallBank mocks a call to an external bank server and then returns the response that
+// CallBankRequest represents the assumed request data the bank API requires, including card details
+// and data about the money to be transacted.
+type CallBankRequest struct {
+	CardNumber  string  `json:"card_number"`
+	ExpiryYear  uint    `json:"expiry_year"`
+	ExpiryMonth uint    `json:"expiry_month"`
+	CVV         string  `json:"cvv"`
+	Amount      float64 `json:"amount"`
+	Currency    string  `json:"currency"`
+}
+
+// CallBankResponse represents the assumed response the bank API returns, containing payment ID and status.
+type CallBankResponse struct {
+	PaymentID string `json:"payment_id"`
+	Status    string `json:"status"`
+}
+
+// CallBank mocks a call to an external bank server and then returns the response that
 // is decoded into CallBankResponse. It is assumed that the data returned are: payment_id, status.
-func MockCallBank() (*models.CallBankResponse, error) {
-	mockData := generateMockData()
+func CallBank(r CallBankRequest) (*CallBankResponse, error) {
+	// Pretend a call is made to the bank API using the CallBankRequest data
+	_ = r
+
+	// Generate CallBankResponse with mock data
+	mockData := generateMockedData()
 	mockDataJSON, _ := marshalMockData(mockData)
 
 	callBankResponse, err := DecodeBankResponse(mockDataJSON)
@@ -36,8 +56,8 @@ func marshalMockData(data map[string]string) ([]byte, error) {
 }
 
 // DecodeBankResponse decodes the bank response into CallBankResponse.
-func DecodeBankResponse(responseJSON []byte) (*models.CallBankResponse, error) {
-	callBankResponse := models.CallBankResponse{}
+func DecodeBankResponse(responseJSON []byte) (*CallBankResponse, error) {
+	callBankResponse := CallBankResponse{}
 	data := bytes.NewReader(responseJSON)
 	err := json.NewDecoder(data).Decode(&callBankResponse)
 	if err != nil {
@@ -47,9 +67,9 @@ func DecodeBankResponse(responseJSON []byte) (*models.CallBankResponse, error) {
 	return &callBankResponse, nil
 }
 
-// generateMockData generates mock data with fields payment_id (36 characters) and status, returned in a map.
+// generateMockedData generates mock data with fields payment_id (36 characters) and status, returned in a map.
 // There is an 80% chance that status is "SUCCESS" and 20% chance of "FAILED".
-func generateMockData() map[string]string {
+func generateMockedData() map[string]string {
 	paymentID := uuid.New().String()
 
 	status := "SUCCESS"

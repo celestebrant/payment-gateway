@@ -18,8 +18,3 @@ type ProcessPaymentRequest struct {
 	Amount      float64 `json:"amount"`
 	Currency    string  `json:"currency"`
 }
-
-type CallBankResponse struct {
-	PaymentID string `json:"payment_id"`
-	Status    string `json:"status"`
-}
