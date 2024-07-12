@@ -144,7 +144,7 @@ celeste@Celestes-MacBook-Pro processout-payment-gateway % go run ./cmd/server
 2024/07/11 22:04:40 {9fdbd34c-3082-4ce7-9718-369f541fa317 FAILED ************5678 2028 12 12.05 GBP}
 ```
 
-You can now fetch the existing payment by ID:
+You can now fetch the existing payment by ID, which will also output to the server console:
 ```
 celeste@Celestes-MacBook-Pro processout-payment-gateway % curl -X GET http://localhost:8000/payments/9fdbd34c-3082-4ce7-9718-369f541fa317 -H "Content-Type: application/json"
 {"id":"9fdbd34c-3082-4ce7-9718-369f541fa317","status":"FAILED","masked_card_number":"************5678","expiry_year":2028,"expiry_month":12,"amount":12.05,"currency":"GBP"}
