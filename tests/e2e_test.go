@@ -8,7 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/celestebrant/processout-payment-gateway/server"
 	"github.com/celestebrant/processout-payment-gateway/models"
+	"github.com/celestebrant/processout-payment-gateway/utils"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 )
@@ -20,17 +22,17 @@ func TestEndToEndPaymentFlow(t *testing.T) {
 
 	// Setup
 	router := mux.NewRouter()
-	router.HandleFunc(path, ProcessPaymentHandler).Methods("POST")
-	router.HandleFunc(path+"/{id}", GetPaymentHandler).Methods("GET")
+	router.HandleFunc(utils.Path, server.ProcessPaymentHandler).Methods("POST")
+	router.HandleFunc(utils.Path+"/{id}", server.GetPaymentHandler).Methods("GET")
 
 	server := httptest.NewServer(router)
 	defer server.Close()
 
 	// Process payment (pp)
-	body, err := json.Marshal(validProcessPaymentRequest())
+	body, err := json.Marshal(utils.ValidProcessPaymentRequest())
 	r.NoError(err, "failed to marshal request")
 
-	ppRequest, err := http.NewRequest("POST", server.URL+path, bytes.NewReader(body))
+	ppRequest, err := http.NewRequest("POST", server.URL+utils.Path, bytes.NewReader(body))
 	r.NoError(err, "failed to create request")
 	ppRequest.Header.Set("Content-Type", "application/json")
 
@@ -45,7 +47,7 @@ func TestEndToEndPaymentFlow(t *testing.T) {
 	r.NoError(err, "failed to unmarshal process payment response")
 
 	// Get the payment (gp)
-	gpRequest, err := http.NewRequest("GET", fmt.Sprintf("%s%s/%s", server.URL, path, maskedPayment.ID), nil)
+	gpRequest, err := http.NewRequest("GET", fmt.Sprintf("%s%s/%s", server.URL, utils.Path, maskedPayment.ID), nil)
 	r.NoError(err, "failed to create retrieve request")
 
 	gpResponse, err := http.DefaultClient.Do(gpRequest)

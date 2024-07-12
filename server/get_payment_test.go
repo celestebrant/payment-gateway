@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"bytes"
@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/celestebrant/processout-payment-gateway/utils"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -18,8 +19,8 @@ func TestGetPayment(t *testing.T) {
 	t.Parallel()
 
 	router := mux.NewRouter()
-	router.HandleFunc(path, ProcessPaymentHandler).Methods("POST")
-	router.HandleFunc(path+"/{id}", GetPaymentHandler).Methods("GET")
+	router.HandleFunc(utils.Path, ProcessPaymentHandler).Methods("POST")
+	router.HandleFunc(utils.Path+"/{id}", GetPaymentHandler).Methods("GET")
 
 	server := httptest.NewServer(router)
 	defer server.Close()
@@ -29,7 +30,7 @@ func TestGetPayment(t *testing.T) {
 		r, a := require.New(t), assert.New(t)
 
 		// Get the payment
-		request, err := http.NewRequest("GET", fmt.Sprintf("%s%s/%s", server.URL, path, uuid.New().String()), nil)
+		request, err := http.NewRequest("GET", fmt.Sprintf("%s%s/%s", server.URL, utils.Path, uuid.New().String()), nil)
 		r.NoError(err, "failed to create retrieve request")
 
 		response, err := http.DefaultClient.Do(request)
@@ -48,7 +49,7 @@ func TestGetPayment(t *testing.T) {
 		r, a := require.New(t), assert.New(t)
 
 		// Get the payment
-		request, err := http.NewRequest("GET", fmt.Sprintf("%s%s/%sa", server.URL, path, uuid.New().String()), nil)
+		request, err := http.NewRequest("GET", fmt.Sprintf("%s%s/%sa", server.URL, utils.Path, uuid.New().String()), nil)
 		r.NoError(err, "failed to create retrieve request")
 
 		response, err := http.DefaultClient.Do(request)

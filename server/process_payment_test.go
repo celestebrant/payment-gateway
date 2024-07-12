@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/celestebrant/processout-payment-gateway/models"
+	"github.com/celestebrant/processout-payment-gateway/utils"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
@@ -54,13 +55,13 @@ func TestProcessPaymentHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := require.New(t)
 
-			processPaymentRequest := validProcessPaymentRequest()
+			processPaymentRequest := utils.ValidProcessPaymentRequest()
 			tc.modifyRequest(processPaymentRequest)
 			body, err := json.Marshal(processPaymentRequest)
 			r.NoError(err, "failed to marshal request")
 
 			// Request and response implement http.ResponseWriter and http.Request
-			request := httptest.NewRequest("POST", path, bytes.NewReader(body))
+			request := httptest.NewRequest("POST", utils.Path, bytes.NewReader(body))
 			request.Header.Set("Content-Type", "application/json")
 			response := httptest.NewRecorder()
 
@@ -254,7 +255,7 @@ func TestValidateProcessPaymentRequest(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			r := require.New(t)
-			req := validProcessPaymentRequest()
+			req := utils.ValidProcessPaymentRequest()
 			tc.modifyRequest(req)
 			err := validateProcessPaymentRequest(*req)
 
@@ -303,7 +304,7 @@ func TestMaskCardNumber(t *testing.T) {
 func TestPopulateMaskedPayment(t *testing.T) {
 	a := assert.New(t)
 
-	request := validProcessPaymentRequest()
+	request := utils.ValidProcessPaymentRequest()
 	id := "some-id"
 	status := "some-status"
 
@@ -315,15 +316,4 @@ func TestPopulateMaskedPayment(t *testing.T) {
 	a.Equal(request.ExpiryMonth, maskedPayment.ExpiryMonth)
 	a.Equal(request.Amount, maskedPayment.Amount)
 	a.Equal(request.Currency, maskedPayment.Currency)
-}
-
-func validProcessPaymentRequest() *models.ProcessPaymentRequest {
-	return &models.ProcessPaymentRequest{
-		CardNumber:  "1234123412341234",
-		ExpiryYear:  2099,
-		ExpiryMonth: 12,
-		CVV:         "987",
-		Amount:      10.05,
-		Currency:    "GBP",
-	}
 }

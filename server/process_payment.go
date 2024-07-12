@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"encoding/json"
@@ -7,10 +7,25 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"sync"
 
 	"github.com/celestebrant/processout-payment-gateway/bank"
 	"github.com/celestebrant/processout-payment-gateway/models"
 )
+
+// Subset of ISO 4217 currency codes
+var supportedCurrencies = map[string]bool{
+	"EUR": true, "GBP": true,
+}
+
+var paymentStore *PaymentStore
+var once sync.Once
+
+func init() {
+	once.Do(func() {
+		paymentStore = NewPaymentStore()
+	})
+}
 
 // ProcessPaymentHandler handles process payment requests.
 func ProcessPaymentHandler(w http.ResponseWriter, r *http.Request) {
