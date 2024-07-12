@@ -13,8 +13,6 @@ func GetPaymentHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	log.Printf("Received ID: %s len %d", id, len(id))
-
 	if len(id) > 36 {
 		http.Error(w, "payment ID should have up to 36 characters", http.StatusBadRequest)
 		return
@@ -25,6 +23,8 @@ func GetPaymentHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "payment not found", http.StatusNotFound)
 		return
 	}
+
+	log.Println("Fetched payment:", *maskedPayment)
 
 	json.NewEncoder(w).Encode(maskedPayment)
 }

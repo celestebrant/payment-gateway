@@ -10,11 +10,6 @@ type MaskedPayment struct {
 	Currency         string  `json:"currency"`
 }
 
-type BankResponse struct {
-	ID     string `json:"id"`
-	Status string `json:"status"`
-}
-
 type ProcessPaymentRequest struct {
 	CardNumber  string  `json:"card_number"`
 	ExpiryYear  uint    `json:"expiry_year"`
@@ -24,27 +19,7 @@ type ProcessPaymentRequest struct {
 	Currency    string  `json:"currency"`
 }
 
-// NewProcessPaymentRequest creates a new ProcessPaymentRequest with zero values.
-func NewProcessPaymentRequest() *ProcessPaymentRequest {
-	return &ProcessPaymentRequest{
-		CardNumber:  "",
-		ExpiryYear:  0,
-		ExpiryMonth: 0,
-		CVV:         "",
-		Amount:      0,
-		Currency:    "",
-	}
-}
-
 type CallBankResponse struct {
 	PaymentID string `json:"payment_id"`
 	Status    string `json:"status"`
-}
-
-// NewCallBankResponse creates a new CallBankResponse with zero values.
-func NewCallBankResponse() *CallBankResponse {
-	return &CallBankResponse{
-		PaymentID: "",
-		Status:    "",
-	}
 }

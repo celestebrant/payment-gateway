@@ -37,14 +37,14 @@ func marshalMockData(data map[string]string) ([]byte, error) {
 
 // DecodeBankResponse decodes the bank response into CallBankResponse.
 func DecodeBankResponse(responseJSON []byte) (*models.CallBankResponse, error) {
-	callBankResponse := models.NewCallBankResponse()
+	callBankResponse := models.CallBankResponse{}
 	data := bytes.NewReader(responseJSON)
-	err := json.NewDecoder(data).Decode(callBankResponse)
+	err := json.NewDecoder(data).Decode(&callBankResponse)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode payment response from bank server: %w", err)
 	}
 
-	return callBankResponse, nil
+	return &callBankResponse, nil
 }
 
 // generateMockData generates mock data with fields payment_id (36 characters) and status, returned in a map.

@@ -29,13 +29,13 @@ func init() {
 
 // ProcessPaymentHandler handles process payment requests.
 func ProcessPaymentHandler(w http.ResponseWriter, r *http.Request) {
-	request := models.NewProcessPaymentRequest()
-	if err := json.NewDecoder(r.Body).Decode(request); err != nil {
+	request := models.ProcessPaymentRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "failed to unmarshal the request", http.StatusBadRequest)
 		return
 	}
 
-	if err := validateProcessPaymentRequest(*request); err != nil {
+	if err := validateProcessPaymentRequest(request); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -47,9 +47,9 @@ func ProcessPaymentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Add payment to store
-	maskedPayment := populateMaskedPayment(*request, bankResponse.PaymentID, bankResponse.Status)
+	maskedPayment := populateMaskedPayment(request, bankResponse.PaymentID, bankResponse.Status)
 	paymentStore.AddPayment(maskedPayment)
-	log.Println(*maskedPayment)
+	log.Println("Processed payment:", *maskedPayment)
 
 	json.NewEncoder(w).Encode(maskedPayment)
 }
