@@ -1,7 +1,5 @@
 # Payment Gateway
 
-By Celeste Brant.
-
 This project is a Payment Gateway API that allows merchants to process new payments and retrieve details of previously made payments.
 
 Prequisites:
