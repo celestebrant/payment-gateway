@@ -69,7 +69,7 @@ Example body
 - `amount` - (mandatory) Must be a positive number with up to 2 decimal places.
 - `currency` - (mandatory) Must be either `"GBP"` or `"EUR"`.
 
-**Example cURL request**
+*Example cURL request*
 
 ```sh
 curl -X POST http://localhost:8000/payments \
@@ -114,7 +114,7 @@ Example body
 - `amount` - (mandatory) Must be a positive number with up to 2 decimal places.
 - `currency` - (mandatory) Must be either `"GBP"` or `"EUR"`.
 
-**Example cURL request**
+*Example cURL request*
 
 ```sh
 curl -X GET http://localhost:8000/payments/c08a3e62-ab97-43fc-a633-5b49f929e235 \
@@ -182,7 +182,7 @@ The application has two endpoints, with a handler for each:
 - The in-memory payment data store, `PaymentStore.AddPayment`: The in-memory payment store, `PaymentStore`, holds a map containing masked payment data, and a mutex. Any moment the entire set of payment data is changed, the mutex is locked, the operation is performed, and then the mutex is unlocked. This is to prevent race conditions where a payment has not yet completed processing and an attempted fetch is performed concurrently (although in this current design, the payment ID is only returned upon process completion so this situation would not be possible in reality). This approach would be especially handy if the application became more complex and support for amending individual payments was added, as it would prevent fetching stale payment data.
 - Logging is implemented in each handler which outputs to the server console every time a payment is processed and fetched. This would aid debugging.
 
-## Testing:
+## Testing
 Run all tests with `go test ./...`. This runs all test files (ending with `_test.go`).
 - Unit tests reside in each package.
 - End to end (e2e) tests reside in `/tests`. Note that payment retrieval is best tested e2e due to usage of the store.
