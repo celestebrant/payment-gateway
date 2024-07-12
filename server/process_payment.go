@@ -18,12 +18,16 @@ var supportedCurrencies = map[string]bool{
 	"EUR": true, "GBP": true,
 }
 
-var paymentStore *PaymentStore
-var once sync.Once
+var (
+	paymentStore *PaymentStore
+	bankClient   *mockbank.BankClient
+	once         sync.Once
+)
 
 func init() {
 	once.Do(func() {
 		paymentStore = NewPaymentStore()
+		bankClient = mockbank.NewBankClient()
 	})
 }
 
@@ -41,8 +45,8 @@ func ProcessPaymentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate a mock bank call request, and receive a mocked response with useful data
-	bankRequest := callBankRequest(request)
-	bankResponse, err := mockbank.CallBank(bankRequest)
+	bankRequest := bankPaymentRequest(request)
+	bankResponse, err := bankClient.MakePayment(bankRequest)
 	if err != nil {
 		http.Error(w, "unexpected error from call to the bank", http.StatusInternalServerError)
 		return
@@ -59,9 +63,9 @@ func ProcessPaymentHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(maskedPayment)
 }
 
-// callBankRequest generates a mockbank.CallBankRequest by populating with values from p.
-func callBankRequest(p models.ProcessPaymentRequest) mockbank.CallBankRequest {
-	return mockbank.CallBankRequest{
+// bankPaymentRequest generates a mockbank.CallBankRequest by populating with values from p.
+func bankPaymentRequest(p models.ProcessPaymentRequest) mockbank.MakePaymentRequest {
+	return mockbank.MakePaymentRequest{
 		CardNumber:  p.CardNumber,
 		ExpiryYear:  p.ExpiryYear,
 		ExpiryMonth: p.ExpiryMonth,

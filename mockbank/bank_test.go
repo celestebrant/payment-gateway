@@ -1,6 +1,7 @@
 package mockbank
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,10 +20,10 @@ func TestMockData(t *testing.T) {
 	)
 
 	// Verify decoding process propagates values correctly
-	mockDataJSON, err := marshalMockData(mockDataMap)
+	mockDataJSON, err := json.Marshal(mockDataMap)
 	r.NoError(err)
 
-	callBankResponse, err := DecodeBankResponse(mockDataJSON)
+	callBankResponse, err := decodeBankResponse(mockDataJSON)
 	r.NoError(err)
 	a.Equal(mockDataMap["payment_id"], callBankResponse.PaymentID, "payment ID value should be propagated")
 	r.Equal(mockDataMap["status"], callBankResponse.Status, "payment ID value should be propagated")
@@ -30,8 +31,9 @@ func TestMockData(t *testing.T) {
 
 func TestCallBank(t *testing.T) {
 	r, a := require.New(t), assert.New(t)
-	callBankRequest := CallBankRequest{}
-	callBankResponse, err := CallBank(callBankRequest)
+	bankClient := NewBankClient()
+	callBankRequest := MakePaymentRequest{}
+	callBankResponse, err := bankClient.MakePayment(callBankRequest)
 	r.NoError(err)
 	a.NotEmpty(callBankResponse.PaymentID)
 	a.NotEmpty(callBankResponse.Status)

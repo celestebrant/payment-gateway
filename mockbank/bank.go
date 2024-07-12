@@ -4,15 +4,30 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"golang.org/x/exp/rand"
 
 	"github.com/google/uuid"
 )
 
-// CallBankRequest represents the assumed request data the bank API requires, including card details
+// BankClient is the client for making mocked requests to the bank.
+type BankClient struct {
+	BaseURL    string
+	HTTPClient *http.Client
+}
+
+// NewBankClient instantiates a new bank client.
+func NewBankClient() *BankClient {
+	return &BankClient{
+		BaseURL:    "mockbank.com",
+		HTTPClient: &http.Client{},
+	}
+}
+
+// MakePaymentRequest represents the assumed request data the bank API requires, including card details
 // and data about the money to be transacted.
-type CallBankRequest struct {
+type MakePaymentRequest struct {
 	CardNumber  string  `json:"card_number"`
 	ExpiryYear  uint    `json:"expiry_year"`
 	ExpiryMonth uint    `json:"expiry_month"`
@@ -21,23 +36,23 @@ type CallBankRequest struct {
 	Currency    string  `json:"currency"`
 }
 
-// CallBankResponse represents the assumed response the bank API returns, containing payment ID and status.
-type CallBankResponse struct {
+// MakePaymentResponse represents the assumed response the bank API returns, containing payment ID and status.
+type MakePaymentResponse struct {
 	PaymentID string `json:"payment_id"`
 	Status    string `json:"status"`
 }
 
-// CallBank mocks a call to an external bank server and then returns the response that
+// MakePayment mocks a call to an external bank server and then returns the response that
 // is decoded into CallBankResponse. It is assumed that the data returned are: payment_id, status.
-func CallBank(r CallBankRequest) (*CallBankResponse, error) {
-	// Pretend a call is made to the bank API using the CallBankRequest data
-	_ = r
-
+func (b *BankClient) MakePayment(r MakePaymentRequest) (*MakePaymentResponse, error) {
 	// Generate CallBankResponse with mock data
 	mockData := generateMockedData()
-	mockDataJSON, _ := marshalMockData(mockData)
+	mockDataJSON, err := json.Marshal(mockData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal mocked make payment request")
+	}
 
-	callBankResponse, err := DecodeBankResponse(mockDataJSON)
+	callBankResponse, err := decodeBankResponse(mockDataJSON)
 	if err != nil {
 		return nil, err
 	}
@@ -45,19 +60,9 @@ func CallBank(r CallBankRequest) (*CallBankResponse, error) {
 	return callBankResponse, nil
 }
 
-// marshalMockData converts input map data to []byte, which can be used for decoding.
-func marshalMockData(data map[string]string) ([]byte, error) {
-	dataJSON, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal mocked payment response from bank server")
-	}
-
-	return dataJSON, err
-}
-
-// DecodeBankResponse decodes the bank response into CallBankResponse.
-func DecodeBankResponse(responseJSON []byte) (*CallBankResponse, error) {
-	callBankResponse := CallBankResponse{}
+// decodeBankResponse decodes the bank response into CallBankResponse.
+func decodeBankResponse(responseJSON []byte) (*MakePaymentResponse, error) {
+	callBankResponse := MakePaymentResponse{}
 	data := bytes.NewReader(responseJSON)
 	err := json.NewDecoder(data).Decode(&callBankResponse)
 	if err != nil {
@@ -67,7 +72,7 @@ func DecodeBankResponse(responseJSON []byte) (*CallBankResponse, error) {
 	return &callBankResponse, nil
 }
 
-// generateMockedData generates mock data with fields payment_id (36 characters) and status, returned in a map.
+// generateMockedData returns a map of mocked data with fields payment_id (36 characters) and status.
 // There is an 80% chance that status is "SUCCESS" and 20% chance of "FAILED".
 func generateMockedData() map[string]string {
 	paymentID := uuid.New().String()
