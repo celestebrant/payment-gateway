@@ -180,10 +180,16 @@ The application has two endpoints, with a handler for each:
 ### Design choices
 - `MaskedPayment` as a data structure: Payment data generally is very sensitive and the payment data that is stored in this application is masked to reduce the risk in the event of a data breach, such as masking the card number and omitting CVV.
 - The in-memory payment data store, `PaymentStore.AddPayment`: The in-memory payment store, `PaymentStore`, holds a map containing masked payment data, and a mutex. Any moment the entire set of payment data is changed, the mutex is locked, the operation is performed, and then the mutex is unlocked. This is to prevent race conditions where a payment has not yet completed processing and an attempted fetch is performed concurrently (although in this current design, the payment ID is only returned upon process completion so this situation would not be possible in reality). This approach would be especially handy if the application became more complex and support for amending individual payments was added, as it would prevent fetching stale payment data.
+- Logging is implemented in each handler which outputs to the server console every time a payment is processed and fetched. This would aid debugging.
 
 ## Testing:
 Run all tests with `go test ./...`. This runs all test files (ending with `_test.go`).
-There are 2 levels of testing currently: unit and integration tests.
+- Unit tests reside in each package.
+- End to end (e2e) tests reside in `/tests`. Note that payment retrieval is best tested e2e due to usage of the store.
+- There are 2 levels of testing currently: unit and integration tests.
+
+To clean the test cache, run `go clean -testcache`.
+Run run a specific test with `go test -run TestName ./path/to/test`, e.g. `go test -run TestEndToEndPaymentFlow ./tests`, for example.
 
 ## Assumptions
 - For simplicity, typical British Visa and Mastercard payment card characteristics are the only accepted payment method for my solution. The characteristics are:
@@ -202,6 +208,7 @@ There are 2 levels of testing currently: unit and integration tests.
 - Deployment on a cloud instance for reduced overhead on hardware maintenance, although requiring platform engineering experience.
 - Observability, performance monitoring and logging. Useful for understanding load requirements when performance analysis is done for production deployments - might find answers to questions like "High read? Or high writing? Or both?", "Why do my deployments fail sometimes?", etc.
 - Load testing: stress tests, peak load, soak testing for perfomance degradation and race condition identification.
+- Test utils package and helper functions.
 
 ## Cloud technologies
 It could be possible to run the computation proceses using AWS Elastic Load Balancing as this would automatically distribute traffic across EC2 instances, and may be suitable for generally high and variable load. Alternatively AWS Lambda could be an option, although would not suitable for containerised deployment. The payment details could be stored using AWS RDS with an SQL database like MySQL or PostgreSQL. The API could be explosed with AWS API Gateway and AWS CloudWatch and Performance Insights could be used for monitoring and logging including monitoring database usage.
