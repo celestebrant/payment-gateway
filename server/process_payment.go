@@ -107,20 +107,6 @@ func validateProcessPaymentRequest(request models.ProcessPaymentRequest) error {
 	return nil
 }
 
-// populatePayment returns a Payment with values from the provided request, id and status.
-func populatePayment(request models.ProcessPaymentRequest, id, status string) *models.Payment {
-	return &models.Payment{
-		ID:          id,
-		Status:      status,
-		CardNumber:  request.CardNumber,
-		ExpiryYear:  request.ExpiryYear,
-		ExpiryMonth: request.ExpiryMonth,
-		CVV:         request.CVV,
-		Amount:      request.Amount,
-		Currency:    request.Currency,
-	}
-}
-
 // populateMaskedPayment returns a MaskedPayment with values from the provided request, id and status.
 func populateMaskedPayment(request models.ProcessPaymentRequest, id, status string) *models.MaskedPayment {
 	return &models.MaskedPayment{

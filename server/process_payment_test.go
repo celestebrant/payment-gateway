@@ -270,31 +270,6 @@ func TestValidateProcessPaymentRequest(t *testing.T) {
 	}
 }
 
-func TestPopulatePayment(t *testing.T) {
-	a := assert.New(t)
-
-	id := "some-id"
-	status := "some-status"
-	request := models.ProcessPaymentRequest{
-		CardNumber:  "some-card-number",
-		ExpiryYear:  1,
-		ExpiryMonth: 1,
-		CVV:         "some-cvv",
-		Amount:      1.234,
-		Currency:    "some-currency",
-	}
-
-	payment := populatePayment(request, id, status)
-	a.Equal(id, payment.ID)
-	a.Equal(status, payment.Status)
-	a.Equal(request.CardNumber, payment.CardNumber)
-	a.Equal(request.ExpiryYear, payment.ExpiryYear)
-	a.Equal(request.ExpiryMonth, payment.ExpiryMonth)
-	a.Equal(request.CVV, payment.CVV)
-	a.Equal(request.Amount, payment.Amount)
-	a.Equal(request.Currency, payment.Currency)
-}
-
 func TestMaskCardNumber(t *testing.T) {
 	r := require.New(t)
 	masked := maskCardNumber("1234123412341234")
