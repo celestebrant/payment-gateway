@@ -60,7 +60,7 @@ func TestProcessPaymentHandler(t *testing.T) {
 			r.NoError(err, "failed to marshal request")
 
 			// Request and response implement http.ResponseWriter and http.Request
-			request := httptest.NewRequest("POST", "/process-payment", bytes.NewReader(body))
+			request := httptest.NewRequest("POST", path, bytes.NewReader(body))
 			request.Header.Set("Content-Type", "application/json")
 			response := httptest.NewRecorder()
 
@@ -69,8 +69,8 @@ func TestProcessPaymentHandler(t *testing.T) {
 
 			r.Equal(tc.expectedStatusCode, response.Result().StatusCode)
 
-			if tc.expectedErrorMessage == "" {
-				// Positive scenarios: response should contain maskedPayment data
+			if response.Result().StatusCode == http.StatusOK {
+				// Positive response: should contain masked payment data
 				var maskedPayment models.MaskedPayment
 				err = json.NewDecoder(response.Body).Decode(&maskedPayment)
 				r.NoError(err, "failed to unmarshal response")
@@ -93,7 +93,7 @@ func TestProcessPaymentHandler(t *testing.T) {
 				)
 
 			} else {
-				// Negative scenarios: response should contain an error
+				// Negative response: should contain an error
 				responseBody, err := io.ReadAll(response.Body)
 				r.NoError(err, "failed to read response body")
 				r.Equal(tc.expectedErrorMessage, string(bytes.TrimSpace(responseBody)))

@@ -10,6 +10,7 @@ import (
 
 const (
 	port = "8000"
+	path = "/payments"
 )
 
 var paymentStore = NewPaymentStore()
@@ -20,9 +21,10 @@ var supportedCurrencies = map[string]bool{
 }
 
 func main() {
+	log.Println("new payment store instantiated: ", paymentStore)
 	router := mux.NewRouter()
-	router.HandleFunc("/payments", ProcessPaymentHandler).Methods("POST")
-	router.HandleFunc("/payments/{id}", GetPaymentHandler).Methods("GET")
+	router.HandleFunc(path, ProcessPaymentHandler).Methods("POST")
+	router.HandleFunc(path+"/{id}", GetPaymentHandler).Methods("GET")
 	log.Printf("server listening on port %s...", port)
 	log.Fatal(http.ListenAndServe(fmt.Sprint(":", port), router))
 }

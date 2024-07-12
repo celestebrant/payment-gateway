@@ -47,7 +47,7 @@ func DecodeBankResponse(responseJSON []byte) (*models.CallBankResponse, error) {
 	return callBankResponse, nil
 }
 
-// generateMockData generates mock data with fields payment_id and status, returned in a map.
+// generateMockData generates mock data with fields payment_id (36 characters) and status, returned in a map.
 // There is an 80% chance that status is "SUCCESS" and 20% chance of "FAILED".
 func generateMockData() map[string]string {
 	paymentID := uuid.New().String()
