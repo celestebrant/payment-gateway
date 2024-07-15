@@ -212,11 +212,13 @@ Run run a specific test with `go test -run TestName ./path/to/test`, e.g. `go te
     - In reality, these fields vary across countries and card payment services card, e.g. American Express cards having 15-digit card numbers and CVV of 4 digit length.
 - The supported currency is either GBP or EUR, and the currency may be set to 2 decimal places, and must be positive.
 - The "Aquiring Bank" handles expiry date validation, so my solution does not cover this. An edge case could otherwise arise when using localised time. If the local time of the card issuer is different to the local time of this server's deployment, there is a risk of incorrect validation. It could be possible for the card issuer date to be in a different month, or even year, to the time the server operates with. E.g. UTC time is Jan 2025, the card expiry date is set to Dec 2024 and the local time of the card issuer is also Dec 2024. For productionisation, it would be worth ensuring checking if the Aquiring Bank does indeed handle validating card expiry. If it is agreed that validation should be added to this program, then a mandatory timezone field should be added to the ProcessPaymentRequest that corresponds with the card issuer timezone.
+- The design assumes that only one merchant is using each deployment and data store of this application. Currently, it is possible for a merchant to fetch payment data of another merchant.
 
 ## Areas for improvement
 - Persistent storage for payments e.g. relational (SQL) database, and cache utilisation for frequently fetched payment IDs or other frequently fetched data.
 - Supported currencies not hard-coded but either set via a config map, or alternatively, a separate store plus caching.
-- Stronger security for stored payment data, e.g. encryption.
+- Stronger security for stored payment data, e.g. encryption. This can be configured at the persistent storage level if using cloud services.
+- Implement merchant-specific payment data access: add authorisation authenticate for the merchant to identify the merchant, e.g. via a merchant ID in an API key that is set up prior. This data could be stored in the request header. In the data store, associate each payment with a merchant (e.g. add a `MerchantID` field in `MaskedPayment`), and when fetching payment data, amend the filtering to include the merchant ID.
 - Concurrency tests to ensure race conditions are prevented, and suitable usage of mutex locks is in order.
 - Deployment in a containerised manner (e.g. Docker) and containter orchestration (e.g. Kubernetes) to handle high load.
 - Deployment on a cloud instance for reduced overhead on hardware maintenance, although requiring platform engineering experience.
